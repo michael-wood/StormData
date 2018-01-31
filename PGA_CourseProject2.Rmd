@@ -1,0 +1,91 @@
+---
+title: "Storm Data"
+author: "Michael Wood"
+date: "January 30, 2018"
+output: html_document
+---
+
+# Data Processing                             
+``` {r data_processing }
+#!/usr/bin/env Rscript
+
+library(ggplot2)
+
+# Set fileURL and download data if necessary                                    
+fileURL <- ""
+fileDL <- "./data/repdata_data_StormData.csv.bz2"                                                  
+if(!file.exists(fileDL)){                                                       
+        download.file(fileURL, destfile=fileDL, method="curl")                  
+}                                                                               
+csvData <- read.csv(fileDL)
+
+fatalByEvt <- as.data.frame(
+                  tapply(csvData$FATALITIES, csvData$EVTYPE, FUN=sum))
+colnames(fatalByEvt) <- c("Count")
+
+injuryByEvt <- as.data.frame(
+                  tapply(csvData$INJURIES, csvData$EVTYPE, FUN=sum))
+colnames(injuryByEvt) <- c("Count")
+
+propDmgByEvt <- as.data.frame(
+                  tapply(csvData$PROPDMG, csvData$EVTYPE, FUN=sum))
+colnames(propDmgByEvt) <- c("Count")
+
+cropDmgByEvt <- as.data.frame(
+                  tapply(csvData$CROPDMG, csvData$EVTYPE, FUN=sum))
+colnames(cropDmgByEvt) <- c("Count")
+```
+
+## Fatalities
+```{r fatalities, echo=FALSE}
+top5Fatal <- as.data.frame(head(sort(fatalByEvt$Count, decreasing=TRUE), n=5))
+
+totalFatal <- sum(fatalByEvt$Count)
+tapply(top5Fatal$Count, ` )
+```
+
+## Injuries
+```{r injuries, echo=FALSE}
+top5Injury <- as.data.frame(head(sort(injuryByEvt$`tapply(csvData$INJURIES, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
+totalInjury <- sum(sort(injuryByEvt$`tapply(csvData$INJURIES, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```
+
+## Property Damage
+```{r propDamage, echo=FALSE}
+top5Property <- as.data.frame(head(sort(propDmgByEvt$`tapply(csvData$PROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
+totalInjury <- sum(sort(propDmgByEvt$`tapply(csvData$PROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```
+
+## Crop Damage
+```{r cropDamage, echo=FALSE}
+top5Crop <- as.data.frame(head(sort(cropDmgByEvt$`tapply(csvData$CROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
+totalInjury <- sum(sort(cropDmgByEvt$`tapply(csvData$CROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```
+
+
+# Results
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
