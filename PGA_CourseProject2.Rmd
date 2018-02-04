@@ -1,91 +1,142 @@
 ---
-title: "Storm Data"
+title: "High Priority Weather Events based on Fatalities, Injuries, and Property Damage"
 author: "Michael Wood"
 date: "January 30, 2018"
 output: html_document
 ---
 
-# Data Processing                             
-``` {r data_processing }
+# Summary of Findings
+This analysis considers the database of weather events and their related public health and economic effects.  By first breaking down the data into the leading weather causes of fatalities, injuries, and property damage, a pattern begins to emerge as to the primary concerns a regional government should consider.  Primary causes of fatalities were determined to be tornados, heat, flash floods, lightning, thunderstorm winds.  Most commonly, injuries resulted from tornados, thunderstorm winds, floods, heat, and lightning.  Property damage was most expensive following tornados, floods, thunderstorm winds, hail, and lightning.  Both public health and economic concerns should be addressed by considering tornados, flooding, lightning, and thunderstorm winds.  This indicates public health would be improved by addressing the concerns of high heat, while addressing hail would have a greater impact on property damage.
+
+## Knitr Configuration
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Processing                             
+``` {r preparation}
 #!/usr/bin/env Rscript
 
 library(ggplot2)
 
 # Set fileURL and download data if necessary                                    
 fileURL <- ""
-fileDL <- "./data/repdata_data_StormData.csv.bz2"                                                  
+fileDL <- "repdata_data_StormData.csv.bz2"                                                  
 if(!file.exists(fileDL)){                                                       
         download.file(fileURL, destfile=fileDL, method="curl")                  
-}                                                                               
+}
+```
+
+## Read in data
+``` {r data_processing, cache = TRUE}
+# Read in data from csv file
 csvData <- read.csv(fileDL)
 
+# Summation of Fatalities by Event Type
 fatalByEvt <- as.data.frame(
-                  tapply(csvData$FATALITIES, csvData$EVTYPE, FUN=sum))
-colnames(fatalByEvt) <- c("Count")
+  tapply(csvData$FATALITIES, csvData$EVTYPE, FUN=sum))
+colnames(fatalByEvt) <- c("Fatalities")
+# Create data frame while removing Events with ZERO fatalities
+FBE.NoZero <- as.data.frame(fatalByEvt[fatalByEvt$Fatalities!=0,])
+colnames(FBE.NoZero) <- c("Fatalities")
 
+# Summation of Injuries by Event Type
 injuryByEvt <- as.data.frame(
-                  tapply(csvData$INJURIES, csvData$EVTYPE, FUN=sum))
-colnames(injuryByEvt) <- c("Count")
+  tapply(csvData$INJURIES, csvData$EVTYPE, FUN=sum))
+colnames(injuryByEvt) <- c("Injuries")
+# Create data frame while removing Events with ZERO injuries
+IBE.NoZero <- as.data.frame(injuryByEvt[injuryByEvt$Injuries!=0,])
+colnames(IBE.NoZero) <- c("Injuries")
 
+# Summation of Property Damage by Event Type
 propDmgByEvt <- as.data.frame(
-                  tapply(csvData$PROPDMG, csvData$EVTYPE, FUN=sum))
-colnames(propDmgByEvt) <- c("Count")
+  tapply(csvData$PROPDMG, csvData$EVTYPE, FUN=sum))
+colnames(propDmgByEvt) <- c("Dollars")
+# Create data frame while removing Events with ZERO property damage
+PBE.NoZero <- as.data.frame(propDmgByEvt[propDmgByEvt$Dollars!=0,])
+colnames(PBE.NoZero) <- c("Dollars")
 
+# Summation of Crop Damage by Event Type
 cropDmgByEvt <- as.data.frame(
-                  tapply(csvData$CROPDMG, csvData$EVTYPE, FUN=sum))
+  tapply(csvData$CROPDMG, csvData$EVTYPE, FUN=sum))
 colnames(cropDmgByEvt) <- c("Count")
+# Create data frame while removing Events with ZERO crop damage
+CBE.NoZero <- as.data.frame(cropDmgByEvt[cropDmgByEvt$Count!=0,])
+colnames(CBE.NoZero) <- c("Count")
 ```
 
 ## Fatalities
-```{r fatalities, echo=FALSE}
-top5Fatal <- as.data.frame(head(sort(fatalByEvt$Count, decreasing=TRUE), n=5))
+```{r fatalities}
+qtilesFBE <- quantile(FBE.NoZero$Fatalities, probs = seq(0, 1, 0.1))
+topFatal <- FBE.NoZero[FBE.NoZero$Fatalities>qtilesFBE[10],]
+totalFatal <- sum(fatalByEvt$Fatalities)
+pctTotFatal <- round(sum(topFatal)/totalFatal*100, 2)
 
-totalFatal <- sum(fatalByEvt$Count)
-tapply(top5Fatal$Count, ` )
+fatal.df <- as.data.frame(topFatal)
+fatal.df <- cbind(fatal.df, row.names(fatal.df))
+colnames(fatal.df) <- c("Fatalities", "Events")
 ```
 
 ## Injuries
-```{r injuries, echo=FALSE}
-top5Injury <- as.data.frame(head(sort(injuryByEvt$`tapply(csvData$INJURIES, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
-totalInjury <- sum(sort(injuryByEvt$`tapply(csvData$INJURIES, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```{r injuries}
+qtilesIBE <- quantile(IBE.NoZero$Injuries, probs = seq(0, 1, 0.1))
+topInjury <- IBE.NoZero[IBE.NoZero$Injuries>qtilesIBE[10],]
+totalInjury <- sum(injuryByEvt$Injuries)
+pctTotInjury <- round(sum(topInjury)/totalInjury*100, 2)
+
+injury.df <- as.data.frame(topInjury)
+injury.df <- cbind(injury.df, row.names(injury.df))
+colnames(injury.df) <- c("Injuries", "Events")
 ```
 
 ## Property Damage
-```{r propDamage, echo=FALSE}
-top5Property <- as.data.frame(head(sort(propDmgByEvt$`tapply(csvData$PROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
-totalInjury <- sum(sort(propDmgByEvt$`tapply(csvData$PROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```{r propDamage}
+qtilesPBE <- quantile(PBE.NoZero$Dollars, probs = seq(0, 1, 0.1))
+topPropDmg <- PBE.NoZero[PBE.NoZero$Dollars>qtilesPBE[10],]
+totalPropDmg <- sum(propDmgByEvt$Dollars)
+pctTotPropDmg <- round(sum(topPropDmg)/totalPropDmg*100, 2)
+
+propDmg.df <- as.data.frame(topPropDmg)
+propDmg.df <- cbind(propDmg.df, row.names(propDmg.df))
+colnames(propDmg.df) <- c("Dollars", "Events")
 ```
 
 ## Crop Damage
-```{r cropDamage, echo=FALSE}
-top5Crop <- as.data.frame(head(sort(cropDmgByEvt$`tapply(csvData$CROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE), n=5))
-totalInjury <- sum(sort(cropDmgByEvt$`tapply(csvData$CROPDMG, csvData$EVTYPE, FUN = sum)`, decreasing=TRUE))
+```{r cropDamage}
+qtilesCBE <- quantile(CBE.NoZero$Count, probs = seq(0, 1, 0.1))
+topCropDmg <- CBE.NoZero[CBE.NoZero$Count>qtilesCBE[10],]
+totalCropDmg <- sum(cropDmgByEvt$Count)
 ```
 
 
 # Results
+Shown below are the top 25% of fatality producing weather events with resulted in `r pctTotFatal`% of weather related fatalities.
+```{r fatalities_plots}
+#qplot(topFatal, row.names(topFatal))
 
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+ggplot(data=fatal.df, aes(x=Events, y=Fatalities)) +
+    geom_bar(stat="identity", fill="steelblue")+
+    geom_text(aes(label=Fatalities), vjust=1.6, color="white", size=3)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-## Including Plots
+Shown below are the top 25% of fatality producing weather events which resulted in `r pctTotInjury`% of weather related injuries.
+```{r injuries_plots}
+#qplot(topInjury, row.names(topInjury))
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+ggplot(data=injury.df, aes(x=Events, y=Injuries)) +
+    geom_bar(stat="identity", fill="steelblue")+
+    geom_text(aes(label=Injuries), vjust=1.6, color="white", size=3)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Shown below are the top 25% of fatality producing weather events result in `r pctTotPropDmg`% of weather related propery damage.  Tornados account for much of the property damage followed by thunderstorm winds and flash flooding.
+```{r property_damage_plots}
+#qplot(topPropDmg, row.names(topPropDmg))
+
+ggplot(data=propDmg.df, aes(x=Events, y=Dollars/1000000)) +
+    geom_bar(stat="identity", fill="steelblue")+
+    geom_text(aes(label=Dollars), vjust=-1.6, color="blue", size=2, check_overlap = TRUE)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ylab("Dollars (Millions)")
+```
+
